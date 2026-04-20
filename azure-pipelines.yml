@@ -28,7 +28,7 @@ stages:
     - checkout: self
       fetchDepth: 0
 
-    - task: SonarCloudPrepare@1
+    - task: SonarCloudPrepare@3
       displayName: Prepare SonarCloud analysis
       inputs:
         SonarCloud: '$(SONAR_SERVICE_CONNECTION)'
@@ -52,10 +52,10 @@ stages:
         fi
       displayName: Build with Maven
 
-    - task: SonarCloudAnalyze@1
+    - task: SonarCloudAnalyze@3
       displayName: Run SonarCloud analysis
 
-    - task: SonarCloudPublish@1
+    - task: SonarCloudPublish@3
       displayName: Publish SonarCloud Quality Gate Result
       inputs:
         pollingTimeoutSec: '300'
