@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>ca.martin</groupId>
-	<artifactId>comp367-mvcmovie</artifactId>
+	<artifactId>comp367-mvcmovies</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>comp367-mvcmovie</name>
-	<description>comp367-mvcmovie</description>
+	<name>comp367-mvcmovies</name>
+	<description>comp367-mvcmovies</description>
 	<url/>
 	<licenses>
 		<license/>
