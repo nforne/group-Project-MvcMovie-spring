@@ -1,0 +1,106 @@
+trigger:
+  - main
+
+variables:
+  imageTag: '$(Build.BuildId)'
+  dockerRepository: '$(docker-image-name)'   # replace with your Docker Hub repo (no surrounding quotes)
+  dockerServiceConnection: 'dockerhub-conn'          # replace with your Docker service connection name
+  sshServiceConnection: 'aws-ssh-conn'               # replace with your SSH service connection name
+  containerPort: '8080'                              # port inside container
+  hostPort: '80'                                     # port on EC2 to expose
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+- stage: Build
+  displayName: Build with Maven
+  jobs:
+  - job: BuildJob
+    displayName: Build Job
+    steps:
+    - checkout: self
+
+    - script: |
+        echo "Building with mvn or mvnw"
+        if [ -f mvnw ]; then
+          chmod +x mvnw || true
+          ./mvnw -B clean package -DskipTests
+        else
+          mvn -B clean package -DskipTests
+        fi
+      displayName: Build with Maven
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish JAR artifact
+      inputs:
+        PathtoPublish: 'target'
+        ArtifactName: 'drop'
+        publishLocation: 'Container'
+
+- stage: DockerBuildAndPush
+  displayName: Build and Push Docker Image
+  dependsOn: Build
+  jobs:
+  - job: DockerJob
+    displayName: Docker Build and Push
+    steps:
+    - task: Docker@2
+      displayName: Docker login (service connection)
+      inputs:
+        command: login
+        containerRegistry: '$(dockerServiceConnection)'
+
+    - task: Docker@2
+      displayName: Build and push image
+      inputs:
+        command: buildAndPush
+        containerRegistry: '$(dockerServiceConnection)'
+        repository: '$(dockerRepository)'
+        Dockerfile: '**/Dockerfile'
+        buildContext: '.'
+        tags:
+          - $(imageTag)
+          - latest
+
+    - script: |
+        echo "Image pushed: $(dockerRepository):$(imageTag)"
+      displayName: Info
+
+- stage: Deploy
+  displayName: Deploy to EC2 via SSH
+  dependsOn: DockerBuildAndPush
+  jobs:
+  - deployment: DeployToEC2
+    displayName: Deploy to EC2
+    environment: 'aws-ec2'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: drop
+
+          - task: SSH@0
+            displayName: SSH Pull and Run Container on EC2
+            inputs:
+              sshEndpoint: '$(sshServiceConnection)'
+              runOptions: 'commands'
+              commands: |
+                set -e
+                echo "--- DEBUG INFO ---"
+                echo "User: $USER"
+                echo "Directory: $PWD"
+                
+                echo "Stopping existing container if present..."
+                docker ps -q --filter "name=lab4_app" | grep -q . && docker stop lab4_app || true
+                docker ps -a -q --filter "name=lab4_app" | grep -q . && docker rm lab4_app || true
+                
+                echo "Pulling image: $(dockerRepository):$(imageTag)"
+                docker pull $(dockerRepository):$(imageTag)
+                
+                echo "Launching container on port $(hostPort)..."
+                docker run -d --name lab4_app -p $(hostPort):$(containerPort) --restart unless-stopped $(dockerRepository):$(imageTag)
+                
+                echo "Deployment complete. Current status:"
+                docker ps -a
