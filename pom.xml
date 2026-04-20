@@ -32,7 +32,7 @@
       <repository>
         <id>MvcMoviesApp</id>
         <name>Azure Artifacts MvcMoviesApp</name>
-        <url>https://pkgs.dev.azure.com/ORG/PROJECT/_packaging/MvcMoviesApp/maven/v1</url>
+        <url>https://pkgs.dev.azure.com/mnforne/group-Project-MvcMovie-spring/_packaging/MvcMoviesApp/maven/v1</url>
       </repository>
     </distributionManagement>
 
