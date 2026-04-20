@@ -16,7 +16,7 @@ variables:
   SONAR_SERVICE_CONNECTION: 'sonarcloud-conn'  # SonarCloud service connection name
 
   # Azure Artifacts Maven feed
-  MAVEN_FEED: 'MvcMoviesApp'
+  MAVEN_FEED: '$(mvc-movies-feed)'
 
 pool:
   vmImage: 'ubuntu-latest'
