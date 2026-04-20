@@ -108,7 +108,7 @@ stages:
           chmod +x mvnw || true
           ./mvnw -B deploy -DskipTests
         else
-          mvn -B deploy -DskipTests
+          mvn -B deploy -DskipTests -Dmaven.resolver.transport=wagon
         fi
       displayName: Maven deploy to feed
 
