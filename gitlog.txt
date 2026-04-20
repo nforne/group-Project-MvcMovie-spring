@@ -1,0 +1,29 @@
+cd4d15b Debug artifacts feed
+b9297c3 Debug artifacts feed
+6d7a4ef Debug artifacts feed
+59ef342 Debug artifacts feed
+3f4bf4c Debug distribution manager on pom.xml
+3c11b59 Debug Add distribution manager to pom.xml
+52efcc8 Debug home controller test
+cb23277 Remove duplicate Spring Boot main class Comp367McmovieApplication
+9d784b4 Remove duplicate Spring Boot main class Comp367McmovieApplication
+e45a8df Remove duplicate Spring Boot main class Comp367McmovieApplication
+9b0e856 clean out buggy junk files
+2daa139 Debug unit tests
+ec6d4da Debug pipeline yml
+0b03dcf Add update Delivery stage-release stage and deploy stages
+92c1e83 Add update sonarcloud api from 1 to 3
+6416586 Add update pipiline to include sonarqube code anlysis using sonar cloud
+d887811 update Dockerfile
+8b626ae Merge branch 'main' of https://github.com/nforne/group-Project-MvcMovie-spring
+e3ef998 Update debug pipeline yml
+6f71e33 Merge pull request #12 from nforne/issue/CI-501-azure-pipeline
+8746b23 Update docker file for cashing
+9f37ff6 add README.md content
+1210044 Add starter Dockerfile and pipeline yml
+e484081 Merge pull request #11 from nforne/issue/FEAT-103-assets-and-cdn
+86c6c8b clean up bugs
+6610a13 feat(assets): add AssetDto, AssetService, HomeController, index.html and cinema.js; hide placeholder on Board 1 unless corrupted; play hidden background audio once per session
+be4a0e6 feat(modal): polish trailer modal visuals, controls, and close icon (FEAT-102-trailer-modal)
+6e5b5a5 FEAT-101: add homepage controller and index view
+70ea2f0 Initial commit
