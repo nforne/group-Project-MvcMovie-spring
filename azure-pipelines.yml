@@ -9,18 +9,21 @@ variables:
   containerPort: '8080'
   hostPort: '80'
 
-  # SonarCloud variables (set these in pipeline or variable group)
-  SONAR_PROJECT_KEY: '$(proj-key)'             # replace with your SonarCloud project key
-  SONAR_PROJECT_NAME: '$(proj-name)'             # replace with your SonarCloud project name
-  SONAR_ORGANIZATION: '$(org-name)'             # replace with your SonarCloud organization key
-  SONAR_SERVICE_CONNECTION: 'sonarcloud-conn' # SonarCloud service connection name
+  # Sonar / analysis variables (adjust names/values to match your environment)
+  SONAR_PROJECT_KEY: '$(proj-key)'
+  SONAR_PROJECT_NAME: '$(proj-name)'
+  SONAR_ORGANIZATION: '$(org-name)'
+  SONAR_SERVICE_CONNECTION: 'sonarqube-conn'   # service connection name for SonarQube
+
+  # Azure Artifacts Maven feed
+  MAVEN_FEED: 'MvcMoviesApp'
 
 pool:
   vmImage: 'ubuntu-latest'
 
 stages:
 - stage: Build
-  displayName: Build with Maven
+  displayName: Build with Maven (CI)
   jobs:
   - job: BuildJob
     displayName: Build Job
@@ -28,11 +31,10 @@ stages:
     - checkout: self
       fetchDepth: 0
 
-    - task: SonarCloudPrepare@3
-      displayName: Prepare SonarCloud analysis
+    - task: SonarQubePrepare@3
+      displayName: Prepare SonarQube analysis
       inputs:
-        SonarCloud: '$(SONAR_SERVICE_CONNECTION)'
-        organization: '$(SONAR_ORGANIZATION)'
+        SonarQube: '$(SONAR_SERVICE_CONNECTION)'
         scannerMode: 'CLI'
         configMode: 'manual'
         cliProjectKey: '$(SONAR_PROJECT_KEY)'
@@ -43,20 +45,37 @@ stages:
           sonar.sources=src
 
     - script: |
-        echo "Building with mvn or mvnw"
+        echo "Running tests and generating coverage (maven verify)"
         if [ -f mvnw ]; then
           chmod +x mvnw || true
-          ./mvnw -B -DskipTests package
+          ./mvnw -B clean verify
         else
-          mvn -B clean package -DskipTests
+          mvn -B clean verify
         fi
-      displayName: Build with Maven
+      displayName: Run tests and generate coverage
 
-    - task: SonarCloudAnalyze@3
-      displayName: Run SonarCloud analysis
+    - task: PublishCodeCoverageResults@1
+      displayName: Publish code coverage
+      inputs:
+        codeCoverageTool: 'JaCoCo'
+        summaryFileLocation: 'target/site/jacoco/jacoco.xml'
+        reportDirectory: 'target/site/jacoco'
 
-    - task: SonarCloudPublish@3
-      displayName: Publish SonarCloud Quality Gate Result
+    - script: |
+        echo "Packaging artifact (maven package)"
+        if [ -f mvnw ]; then
+          chmod +x mvnw || true
+          ./mvnw -B package
+        else
+          mvn -B package
+        fi
+      displayName: Build with Maven (package)
+
+    - task: SonarQubeAnalyze@3
+      displayName: Run SonarQube analysis
+
+    - task: SonarQubePublish@3
+      displayName: Publish SonarQube Quality Gate Result
       inputs:
         pollingTimeoutSec: '300'
 
@@ -67,9 +86,34 @@ stages:
         ArtifactName: 'drop'
         publishLocation: 'Container'
 
+- stage: Deliver
+  displayName: Deliver (release artifact to Maven feed)
+  dependsOn: Build
+  jobs:
+  - job: DeliverJob
+    displayName: Deliver Job
+    steps:
+    - checkout: self
+      fetchDepth: 0
+
+    - task: MavenAuthenticate@0
+      displayName: Authenticate to Azure Artifacts Maven feed
+      inputs:
+        artifactsFeeds: '$(MAVEN_FEED)'
+
+    - script: |
+        echo "Deploying artifact to Maven feed: $(MAVEN_FEED)"
+        if [ -f mvnw ]; then
+          chmod +x mvnw || true
+          ./mvnw -B deploy -DskipTests
+        else
+          mvn -B deploy -DskipTests
+        fi
+      displayName: Maven deploy to feed
+
 - stage: DockerBuildAndPush
   displayName: Build and Push Docker Image
-  dependsOn: Build
+  dependsOn: Deliver
   jobs:
   - job: DockerJob
     displayName: Docker Build and Push
@@ -94,13 +138,13 @@ stages:
         echo "Image pushed: $(dockerRepository):$(imageTag)"
       displayName: Info
 
-- stage: Deploy
-  displayName: Deploy to EC2 via SSH
+- stage: DeployToDev
+  displayName: Deploy to Dev
   dependsOn: DockerBuildAndPush
   jobs:
-  - deployment: DeployToEC2
-    displayName: Deploy to EC2
-    environment: 'aws-ec2'
+  - deployment: DeployDev
+    displayName: Deploy to Dev
+    environment: 'dev'
     strategy:
       runOnce:
         deploy:
@@ -109,7 +153,91 @@ stages:
             artifact: drop
 
           - task: SSH@0
-            displayName: SSH Pull and Run Container on EC2
+            displayName: SSH Deploy to Dev (pull & run)
+            inputs:
+              sshEndpoint: '$(sshServiceConnection)'
+              runOptions: 'commands'
+              commands: |
+                set -e
+                echo "Deploying to Dev environment"
+                docker ps -q --filter "name=app_dev" | grep -q . && docker stop app_dev || true
+                docker ps -a -q --filter "name=app_dev" | grep -q . && docker rm app_dev || true
+                docker pull $(dockerRepository):$(imageTag)
+                docker run -d --name app_dev -p 8081:$(containerPort) --restart unless-stopped $(dockerRepository):$(imageTag)
+                docker ps -a
+
+- stage: DeployToQAT
+  displayName: Deploy to QAT
+  dependsOn: DeployToDev
+  jobs:
+  - deployment: DeployQAT
+    displayName: Deploy to QAT
+    environment: 'qat'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: drop
+
+          - task: SSH@0
+            displayName: SSH Deploy to QAT (pull & run)
+            inputs:
+              sshEndpoint: '$(sshServiceConnection)'
+              runOptions: 'commands'
+              commands: |
+                set -e
+                echo "Deploying to QAT environment"
+                docker ps -q --filter "name=app_qat" | grep -q . && docker stop app_qat || true
+                docker ps -a -q --filter "name=app_qat" | grep -q . && docker rm app_qat || true
+                docker pull $(dockerRepository):$(imageTag)
+                docker run -d --name app_qat -p 8082:$(containerPort) --restart unless-stopped $(dockerRepository):$(imageTag)
+                docker ps -a
+
+- stage: DeployToStaging
+  displayName: Deploy to Staging
+  dependsOn: DeployToQAT
+  jobs:
+  - deployment: DeployStaging
+    displayName: Deploy to Staging
+    environment: 'staging'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: drop
+
+          - task: SSH@0
+            displayName: SSH Deploy to Staging (pull & run)
+            inputs:
+              sshEndpoint: '$(sshServiceConnection)'
+              runOptions: 'commands'
+              commands: |
+                set -e
+                echo "Deploying to Staging environment"
+                docker ps -q --filter "name=app_staging" | grep -q . && docker stop app_staging || true
+                docker ps -a -q --filter "name=app_staging" | grep -q . && docker rm app_staging || true
+                docker pull $(dockerRepository):$(imageTag)
+                docker run -d --name app_staging -p 8083:$(containerPort) --restart unless-stopped $(dockerRepository):$(imageTag)
+                docker ps -a
+
+- stage: DeployToProd
+  displayName: Deploy to Production
+  dependsOn: DeployToStaging
+  jobs:
+  - deployment: DeployProd
+    displayName: Deploy to Production
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: drop
+
+          - task: SSH@0
+            displayName: SSH Pull and Run Container on EC2 (Production)
             inputs:
               sshEndpoint: '$(sshServiceConnection)'
               runOptions: 'commands'
