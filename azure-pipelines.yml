@@ -59,9 +59,7 @@ stages:
         repository: '$(dockerRepository)'
         Dockerfile: '**/Dockerfile'
         buildContext: '.'
-        tags:
-          - $(imageTag)
-          - latest
+        tags: $(imageTag),latest
 
     - script: |
         echo "Image pushed: $(dockerRepository):$(imageTag)"
