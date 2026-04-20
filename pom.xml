@@ -30,9 +30,9 @@
     <!-- distributionManagement: configure Azure Artifacts Maven feed for mvn deploy -->
     <distributionManagement>
       <repository>
-        <id>MvcMoviesApp</id>
-        <name>Azure Artifacts MvcMoviesApp</name>
-        <url>https://pkgs.dev.azure.com/mnforne/group-Project-MvcMovie-spring/_packaging/MvcMoviesApp/maven/v1</url>
+        <id>artifacts_in_azure_devops</id>
+        <name>Azure Artifacts artifacts_in_azure_devops</name>
+        <url>https://pkgs.dev.azure.com/mnforne/group-Project-MvcMovie-spring/_packaging/artifacts_in_azure_devops/maven/v1</url>
       </repository>
     </distributionManagement>
 
