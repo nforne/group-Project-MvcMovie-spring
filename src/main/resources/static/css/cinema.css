@@ -1,0 +1,329 @@
+:root {
+  --card-radius: .5rem;
+  --poster-height-desktop: 320px;
+  --poster-height-mobile: 220px;
+  --muted: #6c757d;
+
+  /* controls/footer sizing used to reserve space for the video box */
+  --controls-footer-height: 84px;
+
+  /* light modal tokens */
+  --modal-bg: #f6f7f8;
+  --modal-surface: #ffffff;
+  --modal-contrast: #111217;
+  --modal-subtle: rgba(2,6,23,0.04);
+  --controls-azure: #e6f7ff;
+  --controls-azure-border: #bfe9ff;
+}
+
+/* ---------- Base layout ---------- */
+body {
+  background: #fff;
+  color: #222;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  margin: 0;
+}
+
+.navbar-brand { font-weight: 600; }
+
+/* ---------- Cards and posters ---------- */
+.cinema-card {
+  background: linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0.04));
+  transition: transform .22s ease, box-shadow .22s ease;
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  position: relative;
+}
+
+.cinema-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+}
+
+.cinema-poster {
+  display: block;
+  width: 100%;
+  height: var(--poster-height-desktop);
+  object-fit: cover;
+  background: #e9ecef;
+}
+
+@media (max-width: 767.98px) {
+  .cinema-poster { height: var(--poster-height-mobile); }
+}
+
+/* ---------- Play overlay and caption ---------- */
+.play-overlay {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+}
+
+.cinema-caption {
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: .75rem;
+}
+
+.placeholder-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 160px;
+  background: #f1f3f5;
+  color: #495057;
+}
+
+.play-overlay.disabled {
+  pointer-events: none;
+  opacity: .5;
+}
+
+.nav-tabs .nav-link { cursor: pointer; }
+
+/* ---------- Modal centering and sizing (reverted width behavior) ---------- */
+.modal.show {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.modal-dialog {
+  margin: 0;
+  position: relative;
+  max-width: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Keep modal header compact */
+.modal-header {
+  z-index: 40;
+  position: relative;
+  pointer-events: auto;
+  padding: .5rem 1rem;
+  min-height: 44px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.5));
+  color: var(--modal-contrast);
+  border-bottom: 1px solid rgba(2,6,23,0.04);
+}
+
+/* Modal content: fixed viewport percentage (REVERTED) */
+/* Added 2px black border and 1em padding all around as requested */
+.modal-content {
+  width: 75vw;
+  height: 75vh;
+  max-width: 1200px;
+  max-height: 900px;
+  border-radius: .5rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, var(--modal-bg), var(--modal-surface));
+  color: var(--modal-contrast);
+  box-shadow: 0 18px 40px var(--modal-subtle);
+  border: 2px solid #000;       /* 2px black border */
+  padding: 1em;                 /* 1em padding all around */
+  box-sizing: border-box;
+}
+
+/* Title styling inside header */
+.modal-title {
+  color: var(--modal-contrast);
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+/* Close button: subtle dark icon on light surface */
+.btn-close-white {
+  filter: none;
+  opacity: 0.95;
+  background: transparent;
+}
+
+/* ---------- Video box and controls footer layout ---------- */
+/* video-box takes remaining space inside modal-content; account for padding */
+.video-box {
+  /* subtract footer height and modal-content vertical padding (1em top + 1em bottom) */
+  height: calc(100% - var(--controls-footer-height) - 2em);
+  min-height: 160px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,250,251,0.98));
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* wrapper inside the video-box to center and contain media */
+.player-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  overflow: hidden;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* The media element is constrained to the video-box area */
+.player-media {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain; /* letterbox/pillarbox as needed */
+  background: #000;
+  display: block;
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.06) inset;
+}
+
+/* Phone reel variant (tall) — media is constrained but centered */
+.player-wrapper.phone {
+  padding: 1rem;
+}
+.player-wrapper.phone .player-media {
+  width: auto;
+  height: 100%;
+  max-height: 100%;
+  max-width: 420px;
+  object-fit: cover;
+  border-radius: .5rem;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+}
+
+/* Audio poster area (used when playing audio) */
+.audio-poster {
+  width: 100%;
+  height: 40%;
+  min-height: 120px;
+  background: linear-gradient(180deg,#f2f3f4,#e9ebee);
+  color: var(--modal-contrast);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* ---------- Controls footer (permanent, visible) ---------- */
+.controls-footer {
+  height: var(--controls-footer-height);
+  min-height: 64px;
+  padding: .5rem 1rem;
+  background: linear-gradient(180deg, var(--controls-azure), #dff6ff);
+  border-top: 1px solid var(--controls-azure-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  box-sizing: border-box;
+  z-index: 30;
+  color: #04293a;
+}
+
+/* Controls layout inside footer */
+.controls-row { width: 100%; display:flex; align-items:center; gap:.5rem; }
+.progress-row { margin-top:.25rem; display:flex; align-items:center; gap:.5rem; }
+
+/* Progress styling (single progress bar for seek) */
+#progressRange {
+  appearance: none;
+  height: 8px;
+  background: linear-gradient(90deg, rgba(2,6,23,0.06), rgba(2,6,23,0.03));
+  border-radius: 6px;
+  outline: none;
+}
+#progressRange::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #04293a;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  cursor: pointer;
+}
+
+/* Volume and rate controls sizing */
+#volumeRange { width: 110px; }
+#rateSelect { width: 88px; }
+
+/* Time display */
+#timeDisplay { min-width: 88px; text-align: right; color: #04293a; }
+
+/* Buttons styling tuned to soft monochrome look */
+.btn-sm.btn-light {
+  background: rgba(255,255,255,0.98);
+  color: #04293a;
+  border: 1px solid rgba(2,6,23,0.04);
+  box-shadow: 0 2px 6px rgba(2,6,23,0.04);
+}
+.btn-sm.btn-outline-light {
+  background: transparent;
+  color: var(--modal-contrast);
+  border: 1px solid rgba(2,6,23,0.04);
+}
+
+/* Ensure header close button is visible on light surface */
+.btn-close-white {
+  filter: none;
+  opacity: 0.95;
+}
+
+/* ---------- Accessibility and small screens ---------- */
+@media (max-width: 576px) {
+  .modal-content { width: 92vw; height: 70vh; padding: 0.75em; }
+  .video-box { height: calc(100% - var(--controls-footer-height) - 1.5em); }
+  .player-wrapper.phone .player-media { max-width: 320px; height: 80vh; }
+  .controls-footer { height: 88px; padding: .5rem; }
+  #volumeRange { width: 80px; }
+  #rateSelect { width: 72px; }
+}
+
+/* ---------- Defensive rules to avoid other CSS interfering ---------- */
+.player-media,
+.player-wrapper,
+.video-box,
+.controls-footer {
+  box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+}
+
+/* Neutralize other stylesheet interference */
+.modal-content > .video-box,
+.modal-content > .controls-footer {
+  transform: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Minimal: make the existing modal close X a plain faint black icon */
+.modal-header .btn-close {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.6' d='M3.5 3.5l9 9M12.5 3.5l-9 9' fill='none'/></svg>") !important;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 1em 1em;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0.125rem;
+}
+
+/* hide any built-in pseudo/icon so only our black X shows */
+.modal-header .btn-close::before,
+.modal-header .btn-close svg,
+.modal-header .btn-close [aria-hidden="true"] {
+  display: none !important;
+}
+
