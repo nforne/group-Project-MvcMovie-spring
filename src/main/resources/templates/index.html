@@ -43,30 +43,37 @@
       </nav>
 
       <div class="tab-content mt-4" id="cinema-tabs-content">
-        <!-- Board 1: posters grid -->
+        <!-- Board 1 -->
         <div class="tab-pane fade show active" id="board-1" role="tabpanel" aria-labelledby="board-1-tab">
           <div class="row gy-4">
-            <!-- iterate mediaList provided by controller -->
-            <div th:each="m : ${mediaList}" class="col-12 col-md-6">
+            <div th:each="m : ${board1List}" class="col-12 col-md-6">
               <div class="cinema-card position-relative">
-                <div th:if="${m.posterUrl != null and m.posterUrl != ''}">
+                <!-- poster shown only when posterUrl exists AND asset is NOT the invisible-play asset -->
+                <div th:if="${m.posterUrl != null and m.posterUrl != '' and !m.playInvisibleOnLaunch}">
                   <img th:src="@{${m.posterUrl}}" th:alt="${m.altText}" class="cinema-poster" loading="lazy"/>
                 </div>
 
-                <div th:unless="${m.posterUrl != null and m.posterUrl != ''}" class="cinema-poster placeholder-box">
+                <!-- placeholder only when asset is explicitly corrupted -->
+                <div th:if="${(m.posterUrl == null or m.posterUrl == '') and m.corrupted == true}" class="cinema-poster placeholder-box">
                   <div class="text-center">
                     <strong th:text="${m.title}">Poster</strong>
-                    <div class="small text-muted">Image placeholder</div>
+                    <div class="small text-muted">Image placeholder (corrupted)</div>
                   </div>
                 </div>
 
-                <!-- play button: single data-src attribute (mp4 or mp3) -->
+                <!-- hidden background audio element for assets that should play invisibly on load -->
+                <audio th:if="${m.playInvisibleOnLaunch and m.mediaUrl != null and m.mediaUrl != ''}"
+                       th:id="${'bg-audio-' + m.id}"
+                       th:attr="data-play-invisible=${m.playInvisibleOnLaunch}, preload='auto', src=${m.mediaUrl}"
+                       style="display:none;"></audio>
+
+                <!-- play button only when mediaUrl exists AND asset is NOT the invisible-play asset -->
                 <button type="button"
+                        th:if="${m.mediaUrl != null and m.mediaUrl != '' and !m.playInvisibleOnLaunch}"
                         class="play-overlay btn btn-light btn-lg rounded-circle"
                         data-bs-toggle="modal"
                         data-bs-target="#trailerModal"
-                        th:attr="data-src=${m.videoUrl}, data-title=${m.title}, aria-label=|Play media for ${m.title}|"
-                        th:classappend="${m.videoUrl == null || m.videoUrl == ''} ? ' disabled' : ''">
+                        th:attr="data-src=${m.mediaUrl}, data-title=${m.title}, aria-label=|Play media for ${m.title}|">
                   <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
                     <path d="M11.596 8.697l-6.363 3.692A.5.5 0 0 1 4 12.999V3.001a.5.5 0 0 1 .733-.441l6.363 3.692a.5.5 0 0 1 0 .882z"/>
                   </svg>
@@ -77,26 +84,84 @@
                 </div>
               </div>
             </div>
-            <!-- end th:each -->
+            <div th:if="${#lists.isEmpty(board1List)}" class="col-12 p-4 text-center text-muted">No assets assigned to Board 1.</div>
           </div>
         </div>
 
         <!-- Board 2 -->
         <div class="tab-pane fade" id="board-2" role="tabpanel" aria-labelledby="board-2-tab">
-          <div class="p-4 text-center text-muted">Board 2 content placeholder.</div>
+          <div class="row gy-4">
+            <div th:each="m : ${board2List}" class="col-12 col-md-6">
+              <div class="cinema-card position-relative">
+                <div th:if="${m.posterUrl != null and m.posterUrl != ''}">
+                  <img th:src="@{${m.posterUrl}}" th:alt="${m.altText}" class="cinema-poster" loading="lazy"/>
+                </div>
+                <div th:if="${(m.posterUrl == null or m.posterUrl == '') and m.corrupted == true}" class="cinema-poster placeholder-box">
+                  <div class="text-center">
+                    <strong th:text="${m.title}">Poster</strong>
+                    <div class="small text-muted">Image placeholder (corrupted)</div>
+                  </div>
+                </div>
+
+                <button type="button"
+                        th:if="${m.mediaUrl != null and m.mediaUrl != ''}"
+                        class="play-overlay btn btn-light btn-lg rounded-circle"
+                        data-bs-toggle="modal"
+                        data-bs-target="#trailerModal"
+                        th:attr="data-src=${m.mediaUrl}, data-title=${m.title}, aria-label=|Play media for ${m.title}|">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M11.596 8.697l-6.363 3.692A.5.5 0 0 1 4 12.999V3.001a.5.5 0 0 1 .733-.441l6.363 3.692a.5.5 0 0 1 0 .882z"/>
+                  </svg>
+                </button>
+
+                <div class="cinema-caption">
+                  <h5 class="mb-0" th:text="${m.title}">Title</h5>
+                </div>
+              </div>
+            </div>
+            <div th:if="${#lists.isEmpty(board2List)}" class="col-12 p-4 text-center text-muted">No assets assigned to Board 2.</div>
+          </div>
         </div>
 
         <!-- Board 3 -->
         <div class="tab-pane fade" id="board-3" role="tabpanel" aria-labelledby="board-3-tab">
-          <div class="p-4 text-center text-muted">Board 3 content placeholder.</div>
+          <div class="row gy-4">
+            <div th:each="m : ${board3List}" class="col-12 col-md-6">
+              <div class="cinema-card position-relative">
+                <div th:if="${m.posterUrl != null and m.posterUrl != ''}">
+                  <img th:src="@{${m.posterUrl}}" th:alt="${m.altText}" class="cinema-poster" loading="lazy"/>
+                </div>
+                <div th:if="${(m.posterUrl == null or m.posterUrl == '') and m.corrupted == true}" class="cinema-poster placeholder-box">
+                  <div class="text-center">
+                    <strong th:text="${m.title}">Poster</strong>
+                    <div class="small text-muted">Image placeholder (corrupted)</div>
+                  </div>
+                </div>
+
+                <button type="button"
+                        th:if="${m.mediaUrl != null and m.mediaUrl != ''}"
+                        class="play-overlay btn btn-light btn-lg rounded-circle"
+                        data-bs-toggle="modal"
+                        data-bs-target="#trailerModal"
+                        th:attr="data-src=${m.mediaUrl}, data-title=${m.title}, aria-label=|Play media for ${m.title}|">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M11.596 8.697l-6.363 3.692A.5.5 0 0 1 4 12.999V3.001a.5.5 0 0 1 .733-.441l6.363 3.692a.5.5 0 0 1 0 .882z"/>
+                  </svg>
+                </button>
+
+                <div class="cinema-caption">
+                  <h5 class="mb-0" th:text="${m.title}">Title</h5>
+                </div>
+              </div>
+            </div>
+            <div th:if="${#lists.isEmpty(board3List)}" class="col-12 p-4 text-center text-muted">No assets assigned to Board 3.</div>
+          </div>
         </div>
       </div>
     </section>
   </main>
 
-  <!-- Trailer Modal
-       Structure: fixed video box (video fits inside), controls in footer (permanent, visible).
-       This ensures the video cannot push controls out of view. -->
+  <!-- Trailer Modal (markup only; behavior handled by external JS) -->
   <div class="modal fade" id="trailerModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog" role="document">
       <div class="modal-content text-light">
@@ -105,13 +170,10 @@
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
 
-        <!-- video-box: fixed area that always sits above the controls -->
         <div class="video-box">
           <div id="playerWrapper" class="player-wrapper">
-            <!-- Video element (no native controls). CSS will force it to fit the video-box. -->
             <video id="playerVideo" class="player-media" playsinline preload="metadata" aria-label="Video player"></video>
 
-            <!-- Audio fallback (hidden unless audio) -->
             <div id="audioWrapper" style="display:none; width:100%;">
               <div class="audio-poster d-flex align-items-center justify-content-center">
                 <div class="text-center">
@@ -126,7 +188,6 @@
           </div>
         </div>
 
-        <!-- Controls footer: fixed height, always visible, does not get pushed by video -->
         <div class="modal-footer controls-footer">
           <div class="container-fluid p-0">
             <div class="d-flex align-items-center w-100 gap-2">
@@ -137,7 +198,6 @@
               </div>
 
               <div class="ms-3 flex-grow-1">
-                <!-- single progress bar spans the available width -->
                 <input id="progressRange" type="range" min="0" max="100" value="0" class="w-100" />
               </div>
 
@@ -157,7 +217,6 @@
             </div>
           </div>
         </div>
-        <!-- end modal-footer -->
       </div>
     </div>
   </div>
@@ -166,10 +225,10 @@
     <div class="container"><small class="text-muted">© 2026 MvcMovie</small></div>
   </footer>
 
-  <!-- Bootstrap JS bundle -->
+  <!-- Bootstrap JS bundle (keeps modal functional) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
 
-  <!-- App JS (external) -->
+  <!-- External app JS only -->
   <script src="/js/cinema.js" defer></script>
 </body>
 </html>

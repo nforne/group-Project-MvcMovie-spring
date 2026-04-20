@@ -264,3 +264,97 @@ document.addEventListener('DOMContentLoaded', function () {
   // Initial layout clamp in case modal is already visible
   setTimeout(() => updateLayoutClamp(), 120);
 });
+
+// src/main/resources/static/js/cinema.js
+// Play hidden background audios once per page load. Track with localStorage; clear on unload/next launch.
+
+(function () {
+  const PLAYED_KEY_PREFIX = 'bgAudioPlayed:';
+  // session id stored in sessionStorage so it resets on tab close / new launch
+  let sessionId = sessionStorage.getItem('mvcmovie_session_id');
+  if (!sessionId) {
+    sessionId = String(Date.now()) + '-' + Math.random().toString(36).slice(2, 9);
+    sessionStorage.setItem('mvcmovie_session_id', sessionId);
+  }
+  const playedKey = PLAYED_KEY_PREFIX + sessionId;
+
+  // Clear any leftover flag for this session on load (defensive)
+  // (we rely on beforeunload to remove after play; this ensures a fresh start)
+  localStorage.removeItem(playedKey);
+
+  function tryPlayOnce() {
+    if (localStorage.getItem(playedKey)) return; // already played this session
+
+    const audios = Array.from(document.querySelectorAll('audio[data-play-invisible="true"]'));
+    if (!audios.length) return;
+
+    // Attempt to play all hidden audios once
+    const playAll = () => {
+      const promises = audios.map(a => {
+        a.loop = false; // play only once
+        a.muted = false;
+        try {
+          const p = a.play();
+          return p && typeof p.then === 'function' ? p : Promise.resolve();
+        } catch (e) {
+          return Promise.reject(e);
+        }
+      });
+
+      return Promise.allSettled(promises).then(results => {
+        // If at least one succeeded, mark as played
+        const succeeded = results.some(r => r.status === 'fulfilled');
+        if (succeeded) {
+          localStorage.setItem(playedKey, String(Date.now()));
+        }
+        return succeeded;
+      });
+    };
+
+    // Try immediate play
+    tryPlayImmediate();
+
+    function tryPlayImmediate() {
+      playAll().then(succeeded => {
+        if (succeeded) return;
+        // If blocked by autoplay policy, wait for first user gesture then play once
+        const onFirstGesture = () => {
+          playAll().finally(() => {
+            window.removeEventListener('click', onFirstGesture, true);
+            window.removeEventListener('touchstart', onFirstGesture, true);
+            window.removeEventListener('keydown', onFirstGesture, true);
+          });
+        };
+        window.addEventListener('click', onFirstGesture, true);
+        window.addEventListener('touchstart', onFirstGesture, true);
+        window.addEventListener('keydown', onFirstGesture, true);
+      });
+    }
+  }
+
+  // Remove played flag and session id on unload/close so next launch is fresh
+  function clearSessionFlags() {
+    try {
+      localStorage.removeItem(playedKey);
+    } catch (e) {}
+    try {
+      sessionStorage.removeItem('mvcmovie_session_id');
+    } catch (e) {}
+  }
+
+  // Start after DOM ready
+  document.addEventListener('DOMContentLoaded', function () {
+    tryPlayOnce();
+  });
+
+  // Clear on page unload/close
+  window.addEventListener('beforeunload', clearSessionFlags);
+  // Also clear on visibilitychange when page is being unloaded in some browsers
+  window.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden') {
+      // small timeout to allow navigation to proceed, then clear
+      setTimeout(clearSessionFlags, 200);
+    }
+  });
+})();
+
