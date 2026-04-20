@@ -11,6 +11,7 @@ RUN mvn -B dependency:go-offline
 COPY src ./src
 RUN mvn -B -DskipTests package
 
+
 # Stage 2: runtime (smaller, non-root user)
 FROM eclipse-temurin:17-jdk-jammy
 # Create non-root user for better security
