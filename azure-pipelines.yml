@@ -9,11 +9,11 @@ variables:
   containerPort: '8080'
   hostPort: '80'
 
-  # Sonar / analysis variables (adjust names/values to match your environment)
-  SONAR_PROJECT_KEY: '$(proj-key)'
-  SONAR_PROJECT_NAME: '$(proj-name)'
-  SONAR_ORGANIZATION: '$(org-name)'
-  SONAR_SERVICE_CONNECTION: 'sonarqube-conn'   # service connection name for SonarQube
+  # SonarCloud variables (set these in pipeline or variable group)
+  SONAR_PROJECT_KEY: '$(proj-key)'             # replace with your SonarCloud project key
+  SONAR_PROJECT_NAME: '$(proj-name)'           # replace with your SonarCloud project name
+  SONAR_ORGANIZATION: '$(org-name)'            # replace with your SonarCloud organization key
+  SONAR_SERVICE_CONNECTION: 'sonarcloud-conn'  # SonarCloud service connection name
 
   # Azure Artifacts Maven feed
   MAVEN_FEED: 'MvcMoviesApp'
@@ -23,7 +23,7 @@ pool:
 
 stages:
 - stage: Build
-  displayName: Build with Maven (CI)
+  displayName: Build with Maven
   jobs:
   - job: BuildJob
     displayName: Build Job
@@ -31,10 +31,11 @@ stages:
     - checkout: self
       fetchDepth: 0
 
-    - task: SonarQubePrepare@3
-      displayName: Prepare SonarQube analysis
+    - task: SonarCloudPrepare@3
+      displayName: Prepare SonarCloud analysis
       inputs:
-        SonarQube: '$(SONAR_SERVICE_CONNECTION)'
+        SonarCloud: '$(SONAR_SERVICE_CONNECTION)'
+        organization: '$(SONAR_ORGANIZATION)'
         scannerMode: 'CLI'
         configMode: 'manual'
         cliProjectKey: '$(SONAR_PROJECT_KEY)'
@@ -45,7 +46,7 @@ stages:
           sonar.sources=src
 
     - script: |
-        echo "Running tests and generating coverage (maven verify)"
+        echo "Running unit tests and generating coverage (maven verify)"
         if [ -f mvnw ]; then
           chmod +x mvnw || true
           ./mvnw -B clean verify
@@ -67,15 +68,15 @@ stages:
           chmod +x mvnw || true
           ./mvnw -B package
         else
-          mvn -B package
+          mvn -B clean package
         fi
-      displayName: Build with Maven (package)
+      displayName: Build with Maven
 
-    - task: SonarQubeAnalyze@3
-      displayName: Run SonarQube analysis
+    - task: SonarCloudAnalyze@3
+      displayName: Run SonarCloud analysis
 
-    - task: SonarQubePublish@3
-      displayName: Publish SonarQube Quality Gate Result
+    - task: SonarCloudPublish@3
+      displayName: Publish SonarCloud Quality Gate Result
       inputs:
         pollingTimeoutSec: '300'
 
@@ -87,7 +88,7 @@ stages:
         publishLocation: 'Container'
 
 - stage: Deliver
-  displayName: Deliver (release artifact to Maven feed)
+  displayName: Deliver (release artifact to Azure Artifacts Maven feed)
   dependsOn: Build
   jobs:
   - job: DeliverJob
