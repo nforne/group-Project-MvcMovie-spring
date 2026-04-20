@@ -1,9 +1,6 @@
 # group-Project-MvcMovie-spring
 Group Project – DevOps Implementation
 
-
-Below is a ready-to-use `README.md` for the app as it stands. After this file I’ll create a Copilot Tasks card to generate a repository-ready README file (title and task below).
-
 ---
 
 ```markdown
@@ -108,13 +105,5 @@ src/
 Add your license here.
 
 ```
-
----
-
-**Task to produce a repository-ready README.md**
-
-I will create a repository-ready `README.md` file (with the content above), commit it on branch `issue/FEAT-103-assets-and-cdn`, and push the change if you want.  
-
-Starting the task now — click **Start** on the task card to proceed. 
 
 
