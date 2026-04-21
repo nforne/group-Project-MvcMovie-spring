@@ -59,8 +59,9 @@ stages:
       displayName: Publish code coverage
       inputs:
         codeCoverageTool: 'JaCoCo'
-        summaryFileLocation: 'target/site/jacoco/jacoco.xml'
-        reportDirectory: 'target/site/jacoco'
+        # The '**' tells Azure to search all subdirectories for the file
+        summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/jacoco.xml'
+        reportDirectory: '$(System.DefaultWorkingDirectory)/**/site/jacoco'
 
     - script: |
         echo "Packaging artifact (maven package)"
