@@ -31,7 +31,7 @@ stages:
     - checkout: self
       fetchDepth: 0
 
-    - task: SonarCloudPrepare@6
+    - task: SonarCloudPrepare@3
       displayName: Prepare SonarCloud analysis
       inputs:
         SonarCloud: '$(SONAR_SERVICE_CONNECTION)'
@@ -55,7 +55,7 @@ stages:
         fi
       displayName: Run tests and generate coverage
 
-    - task: PublishCodeCoverageResults@6
+    - task: PublishCodeCoverageResults@1
       displayName: Publish code coverage
       inputs:
         codeCoverageTool: 'JaCoCo'
@@ -72,10 +72,10 @@ stages:
         fi
       displayName: Build with Maven
 
-    - task: SonarCloudAnalyze@6
+    - task: SonarCloudAnalyze@3
       displayName: Run SonarCloud analysis
 
-    - task: SonarCloudPublish@6
+    - task: SonarCloudPublish@3
       displayName: Publish SonarCloud Quality Gate Result
       inputs:
         pollingTimeoutSec: '300'
