@@ -54,6 +54,11 @@ stages:
           mvn -B clean verify
         fi
       displayName: Run tests and generate coverage
+    
+    - script: |
+        echo "Listing all files in target folder:"
+        find target -name jacoco.xml
+      displayName: 'Debug: Locate JaCoCo file'
 
     - task: PublishCodeCoverageResults@1
       displayName: Publish code coverage
